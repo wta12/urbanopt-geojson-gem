@@ -276,6 +276,8 @@ module URBANopt
         runner.registerInfo("#{other_buildings[:features].size} nearby buildings found")
         other_buildings[:features].each do |other_building|
           other_id = other_building[:properties][:id]
+          runner.registerInfo("00_step: review #{other_id}")
+          puts "00_step: review #{other_id}"
           next if other_id == building.id
           # Consider building, if other building type is ShadingOnly and other id is not equal to building id
           if other_building_type == 'ShadingOnly' && other_id != building.id
@@ -305,19 +307,47 @@ module URBANopt
             next if number_of_stories_above_ground.nil?
 
             other_height = number_of_stories_above_ground * floor_to_floor_height
+            puts "01_step: other_height #{other_height}"
+            runner.registerInfo("01_step: other_height #{other_height}")
+
             # find the polygon of the other_building by passing it to the get_multi_polygons method
             other_building_points = building.other_points(other_building, other_height, origin_lat_lon, runner, zoning)
+            
             shadowed = URBANopt::GeoJSON::Helper.is_shadowed(feature_points, other_building_points, origin_lat_lon)
+            puts "shadowed: #{shadowed}"
             next unless shadowed
-            new_building = building.create_other_building(:space_per_building, model, origin_lat_lon, runner, zoning, other_building)
+            # test_path  = '/Users/kcu/Desktop/Scripting/NREL_Work/UCI/Github/UrbanOpt_NREL_UCI/Develop_residential_test/measures/urban_geometry_creation/tests/output/shading_spaces.osm'
+            # [Parameters]
+      # * +create_method+ - _Type:Symbol_ - +:space_per_floor+ or +:space_per_building+ methods can be
+      #   used.
+      # * +model+ - _Type:String_ - An instance of +OpenStudio::Model::Model+_ .
+      # * +origin_lat_lon+ - _Type:Float_ - An instance of +OpenStudio::PointLatLon+ indicating the latitude and longitude of the origin.
+      # * +runner+ - _Type:String_ - An instance of +OpenStudio::Measure::OSRunner+ for the measure run.
+      # * +zoning+ - _Type:Boolean_ - Value is +true+ if utilizing detailed zoning, else
+      #   +false+ Zoning is set to False by default.
+      # * +scaled_footprint_area+ - Used to scale the footprint area using the floor area. 0 by
+      #   default (no scaling).
+      # * +other_building+ - _Type:URBANopt::GeoJSON::Feature - Optional, allow the user to pass in a different building to process. This is used for creating the other buildings for shading.
+              # create_building(create_method, 
+              #                   model, 
+              #                   origin_lat_lon,
+              #                    runner, 
+              #                    zoning = false, 
+              #                    scaled_footprint_area = 0, 
+              #                    other_building = @feature_json)
+            
+            new_building = building.create_other_building(:space_per_building, model, origin_lat_lon, runner, zoning, 0, other_building)
             if new_building.nil? || new_building.empty?
               runner.registerWarning("Failed to create spaces for other building '#{name}'")
             end
+            puts "other_id #{other_id} - new_building #{new_building.class}  \n#{new_building.map {|x| x.floorArea}.sum}"
+            
             other_spaces.concat(new_building)
 
           elsif other_building_type == 'None'
           end
         end
+        
         return other_spaces
       end
 

@@ -229,7 +229,7 @@ module URBANopt
             end
           end
         end
-
+        runner.registerWarning("building_features[:features] size:#{building_features[:features].size}")
         other_spaces = URBANopt::GeoJSON::Helper.process_other_buildings(
           self, other_building_type, building_features, model, origin_lat_lon, runner, zoning
         )
